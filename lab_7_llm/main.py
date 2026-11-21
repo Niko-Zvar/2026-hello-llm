@@ -54,6 +54,17 @@ class RawDataPreprocessor(AbstractRawDataPreprocessor):
         Returns:
             dict: Dataset key properties
         """
+        raw_data = self._raw_data.astype(str).replace("", pd.NA)
+        not_empty = raw_data.dropna()
+        lengths = pd.concat([not_empty["prompt"], not_empty["messages"]]).str.len()
+        return {
+            "dataset_number_of_samples": len(self._raw_data),
+            "dataset_columns": self._raw_data.shape[1],
+            "dataset_duplicates": int(raw_data.duplicated().sum()),
+            "dataset_empty_rows": len(raw_data) - len(not_empty),
+            "dataset_sample_min_len": int(lengths.min()),
+            "dataset_sample_max_len": int(lengths.max()),
+        }
 
     @report_time
     def transform(self) -> None:
@@ -64,8 +75,8 @@ class RawDataPreprocessor(AbstractRawDataPreprocessor):
         data = data[["prompt", "messages"]]
         data = data.rename(columns={"prompt": ColumnNames.QUESTION.value})
         data = data.reset_index(drop=True)
-        data[ColumnNames.CONTEXT.value] = data["messages"].apply(lambda msg: msg[0]["content"])
-        data[ColumnNames.TARGET.value] = data["messages"].apply(lambda msg: msg[-1]["content"])
+        data[ColumnNames.CONTEXT.value] = data["messages"].apply(lambda x: x[0]["content"])
+        data[ColumnNames.TARGET.value] = data["messages"].apply(lambda x: x[-1]["content"])
         self._data = data.drop(columns=["messages"])
 
 

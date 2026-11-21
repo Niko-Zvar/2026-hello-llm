@@ -22,7 +22,11 @@ def main() -> None:
     importer = RawDataImporter(settings.parameters.dataset)
     importer.obtain()
 
+    if importer.raw_data is None:
+        raise ValueError("Dataset was not downloaded")
+
     preprocessor = RawDataPreprocessor(importer.raw_data)
+    print(preprocessor.analyze())
     preprocessor.transform()
 
     dataset = TaskDataset(preprocessor.data.iloc[:100])
